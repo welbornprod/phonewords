@@ -1,0 +1,7 @@
+[package]
+name = "phonewords"
+version = "0.0.1"
+authors = ["Christopher Welborn <cj@welbornprod.com>"]
+
+[dependencies]
+itertools = "*"

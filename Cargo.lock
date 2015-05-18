@@ -1,0 +1,12 @@
+[root]
+name = "phonewords"
+version = "0.0.1"
+dependencies = [
+ "itertools 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "itertools"
+version = "0.3.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+

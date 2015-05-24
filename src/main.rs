@@ -14,7 +14,7 @@ use std::fs::{read_link, File};
 use std::io::{BufRead, BufReader, Error, ErrorKind, Result};
 use std::path::{Path, PathBuf};
 
-static VERSIONSTR: &'static str = "PhoneWords v. 0.0.7";
+static VERSIONSTR: &'static str = "PhoneWords v. 0.0.7-1";
 
 
 /// Creates and initializes a new hashmap.
@@ -75,6 +75,7 @@ fn main() {
 /// are found.
 fn check_number(number: &String, wordfile: &Path, quiet: bool) {
 
+    // Optional status printer.
     let status = |msg: &String| {
         if !quiet {
             println!("{}", msg);
@@ -114,6 +115,7 @@ fn check_number(number: &String, wordfile: &Path, quiet: bool) {
     status(&format!("Word File: {}\n", filename));
 
     // In the future, variable-length numbers may be used.
+    // It would be wasteful to check all combos for a word that is longer.
     let numberlen = usenumber.len();
     // Keep track of the actual attempts/counts.
     let mut matchcnt = 0u32;
@@ -132,8 +134,8 @@ fn check_number(number: &String, wordfile: &Path, quiet: bool) {
             // A combo will never contain a word that is longer than itself.
             continue;
         }
-        wordcnt += 1;
 
+        wordcnt += 1;
         for c in combos.iter() {
             trycnt += 1;
             if c.contains(word.as_str()) {
@@ -144,14 +146,9 @@ fn check_number(number: &String, wordfile: &Path, quiet: bool) {
         }
     }
 
-    let pluralmatches = match matchcnt {
-        1 => "match",
-        _ => "matches"
-    };
-    let pluralwords = match wordcnt {
-        1 => "word",
-        _ => "words"
-    };
+    // Format final status messages.
+    let pluralmatches = if matchcnt == 1 {"match"} else {"matches"};
+    let pluralwords = if wordcnt == 1  {"word"} else {"words"};
 
     status(
         &format!(
@@ -165,7 +162,7 @@ fn check_number(number: &String, wordfile: &Path, quiet: bool) {
     );
 
     // Exit status 2 if no matches were found (otherwise successful).
-    env::set_exit_status(match matchcnt { 0 => 2, _ => 0});
+    env::set_exit_status(if matchcnt == 0 {2} else {0});
 }
 
 /// Print a failure message and set the exit code to 1.

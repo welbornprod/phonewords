@@ -30,7 +30,7 @@ use std::fs::{read_link, File};
 use std::io::{self, BufRead, BufReader};
 use std::path::{Path, PathBuf};
 
-const VERSION: &'static str = "PhoneWords v. 0.0.7-4";
+const VERSION: &'static str = concat!("PhoneWords v. ", env!("CARGO_PKG_VERSION"));
 const HELP: &'static str = "Usage:
         phonewords -h | -v
         phonewords <number> [-q]

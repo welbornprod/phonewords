@@ -1,6 +1,6 @@
 [package]
 name = "phonewords"
-version = "0.0.8"
+version = "0.0.8-1"
 authors = ["Christopher Welborn <cj@welbornprod.com>"]
 
 [dependencies]

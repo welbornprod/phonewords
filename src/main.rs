@@ -14,7 +14,7 @@ use std::fs::{read_link, File};
 use std::io::{BufRead, BufReader, Error, ErrorKind, Result};
 use std::path::{Path, PathBuf};
 
-static VERSIONSTR: &'static str = "PhoneWords v. 0.0.7-2";
+static VERSIONSTR: &'static str = "PhoneWords v. 0.0.7-3";
 
 
 fn main() {
@@ -84,10 +84,7 @@ fn check_number(number: &str, wordfile: &Path, quiet: bool) {
 
     // Ensure that the number is exactly 7 digits,
     // ..truncate or pad with 0's if needed.
-    let mut usenumber: String = number.to_string();
-    while usenumber.len() < 7 {
-        usenumber.insert(0, '0');
-    }
+    let mut usenumber: String = format!("{:0>7}", number);
     while usenumber.len() > 7 {
         usenumber.pop();
     }

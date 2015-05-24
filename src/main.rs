@@ -1,4 +1,4 @@
-#![feature(convert, exit_status)]
+#![feature(exit_status)]
 #[macro_use]
 
 /// Finds possible words that can be made from a phone number.
@@ -14,7 +14,7 @@ use std::fs::{read_link, File};
 use std::io::{BufRead, BufReader, Error, ErrorKind, Result};
 use std::path::{Path, PathBuf};
 
-static VERSIONSTR: &'static str = "PhoneWords v. 0.0.7-1";
+static VERSIONSTR: &'static str = "PhoneWords v. 0.0.7-2";
 
 
 /// Creates and initializes a new hashmap.
@@ -94,7 +94,7 @@ fn check_number(number: &String, wordfile: &Path, quiet: bool) {
 
     status(&format!("\n Checking: {}", usenumber));
 
-    let combos = match get_combos(usenumber.as_str()) {
+    let combos = match get_combos(&usenumber) {
         Ok(c) => c,
         Err(e) => {
             fail_msg(
@@ -138,7 +138,7 @@ fn check_number(number: &String, wordfile: &Path, quiet: bool) {
         wordcnt += 1;
         for c in combos.iter() {
             trycnt += 1;
-            if c.contains(word.as_str()) {
+            if c.contains(&word) {
                 matchcnt += 1;
                 println!("{}: {}", c, word);
                 break;

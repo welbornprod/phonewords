@@ -30,7 +30,9 @@ use std::fs::{read_link, File};
 use std::io::{self, BufRead, BufReader};
 use std::path::{Path, PathBuf};
 
-const VERSION: &'static str = concat!("PhoneWords v. ", env!("CARGO_PKG_VERSION"));
+const VERSION: &'static str = concat!(
+    "PhoneWords v. ", env!("CARGO_PKG_VERSION")
+);
 const HELP: &'static str = "
     Usage:
         phonewords -h | -v
@@ -104,8 +106,8 @@ macro_rules! hashmap(
      };
 );
 
-/// Check a number for matches, print optional status and matches as they
-/// are found.
+/// Check a number for matches,
+//  print optional status and matches as they are found.
 fn check_number(number: &str, wordfile: &Path, quiet: bool) -> Result<(), Error> {
 
     // Optional status printer.
@@ -118,7 +120,8 @@ fn check_number(number: &str, wordfile: &Path, quiet: bool) -> Result<(), Error>
     // Ensure that the number is exactly 7 digits,
     // ..truncate or pad with 0's if needed.
     let mut usenumber = format!("{:0>7}", number);
-    // format! returns character in the ascii range so every byte is a valid char boundary.
+    // format! returns character in the ascii range so every byte
+    // is a valid char boundary.
     usenumber.truncate(7);
 
     status(&format!("\n Checking: {}", usenumber));
@@ -129,7 +132,10 @@ fn check_number(number: &str, wordfile: &Path, quiet: bool) -> Result<(), Error>
 
     // Load word file for iteration, save filename for display purposes.
     let wordreader = BufReader::new(
-        try!(File::open(wordfile).map_err(|err| Error::Io(Some(wordfile.into()), err))));
+        try!(File::open(wordfile).map_err(
+            |err| Error::Io(Some(wordfile.into()), err)
+        ))
+    );
     status(&format!("Word File: {}\n", wordfile.display()));
 
     // In the future, variable-length numbers may be used.
@@ -307,12 +313,17 @@ impl fmt::Display for Error {
         match *self {
             Error::Io(ref file, ref err) => {
                 match *file {
-                    Some(ref file) => write!(fmt, "Io error: {}, file: {}", err, file.display()),
+                    Some(ref file) => {
+                        write!(fmt,
+                            "Io error: {}, file: {}", err, file.display())
+                    },
                     None => write!(fmt, "Io error: {}", err)
                 }
             },
             Error::NotANumber(num) => {
-                write!(fmt, "Error while generating letter combos, not a number: {}", num)
+                write!(fmt,
+                    "Error while generating letter combos, not a number: {}",
+                    num)
             }
         }
     }

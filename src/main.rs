@@ -31,14 +31,17 @@ use std::io::{self, BufRead, BufReader};
 use std::path::{Path, PathBuf};
 
 const VERSION: &'static str = concat!("PhoneWords v. ", env!("CARGO_PKG_VERSION"));
-const HELP: &'static str = "Usage:
+const HELP: &'static str = "
+    Usage:
         phonewords -h | -v
         phonewords <number> [-q]
+
     Options:
         number        : Phone number to check (7 digits).
         -h,--help     : Show this message.
         -q,--quiet    : Only print results.
         -v,--version  : Show version and exit.
+
     Exit status is 1 on error, 2 if no matches were found, and 0 on success.
     ";
 

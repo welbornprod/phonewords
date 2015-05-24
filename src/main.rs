@@ -25,41 +25,52 @@
 extern crate itertools;
 
 use std::collections::{HashMap};
-use std::env;
+use std::{env, error, fmt};
 use std::fs::{read_link, File};
-use std::io::{BufRead, BufReader, Error, ErrorKind, Result};
+use std::io::{self, BufRead, BufReader};
 use std::path::{Path, PathBuf};
 
-static VERSIONSTR: &'static str = "PhoneWords v. 0.0.7-3";
+const VERSION: &'static str = concat!("PhoneWords v. ", env!("CARGO_PKG_VERSION"));
+const HELP: &'static str = "
+    Usage:
+        phonewords -h | -v
+        phonewords <number> [-q]
 
+    Options:
+        number        : Phone number to check (7 digits).
+        -h,--help     : Show this message.
+        -q,--quiet    : Only print results.
+        -v,--version  : Show version and exit.
+
+    Exit status is 1 on error, 2 if no matches were found, and 0 on success.
+    ";
 
 fn main() {
     let args: Vec<String> = env::args().collect();
 
     let arglen = args.len();
-    let mut quiet:bool = false;
+    let mut quiet = false;
 
     if arglen < 2 {
-        print_usage(Some("No arguments!"));
+        print_usage("No arguments!");
         return;
     } else if arglen == 3 {
         if args[2] == "-q" || args[2] == "--quiet" {
             quiet = true;
         } else {
-            print_usage(Some("Expecting -q as the second argument."));
+            print_usage("Expecting -q as the second argument.");
             return;
         }
-
     } else if arglen > 3 {
-        print_usage(Some("Invalid number of arguments."));
+        print_usage("Invalid number of arguments.");
         return;
     }
 
     if args[1] == "-h" || args[1] == "--help" {
-        print_usage(None);
+        println!("{}\n{}", VERSION, HELP);
         return;
     } else if args[1] == "-v" || args[1] == "--version" {
-        println!("{}", VERSIONSTR);
+        println!("{}", VERSION);
         return;
     }
 
@@ -71,7 +82,13 @@ fn main() {
         Ok(p) => p
     };
 
-    check_number(&args[1], &wordpath, quiet);
+    match check_number(&args[1], &wordpath, quiet) {
+        Err(err) => {
+            fail_msg(&err.to_string());
+            return;
+        },
+        Ok(()) => {},
+    }
 }
 
 /// Creates and initializes a new hashmap.
@@ -89,7 +106,7 @@ macro_rules! hashmap(
 
 /// Check a number for matches, print optional status and matches as they
 /// are found.
-fn check_number(number: &str, wordfile: &Path, quiet: bool) {
+fn check_number(number: &str, wordfile: &Path, quiet: bool) -> Result<(), Error> {
 
     // Optional status printer.
     let status = |msg: &String| {
@@ -100,34 +117,20 @@ fn check_number(number: &str, wordfile: &Path, quiet: bool) {
 
     // Ensure that the number is exactly 7 digits,
     // ..truncate or pad with 0's if needed.
-    let mut usenumber: String = format!("{:0>7}", number);
-    while usenumber.len() > 7 {
-        usenumber.pop();
-    }
+    let mut usenumber = format!("{:0>7}", number);
+    // format! returns character in the ascii range so every byte is a valid char boundary.
+    usenumber.truncate(7);
 
     status(&format!("\n Checking: {}", usenumber));
 
     // Generate all possible letter combinations for this number.
-    let combos = match get_combos(&usenumber) {
-        Ok(c) => c,
-        Err(e) => {
-            fail_msg(
-                &format!("Error while generating letter combos:\n{}", e));
-            return;
-        }
-    };
+    let combos = try!(get_combos(&usenumber));
     status(&format!("   Combos: {}", combos.len()));
 
     // Load word file for iteration, save filename for display purposes.
-    let filename = wordfile.to_str().unwrap();
-    let wordfile = BufReader::new(match File::open(wordfile) {
-        Err(e) => {
-            fail_msg(&format!("Cannot open file: {}\n{}", filename, e));
-            return;
-        },
-        Ok(f) => f
-    });
-    status(&format!("Word File: {}\n", filename));
+    let wordreader = BufReader::new(
+        try!(File::open(wordfile).map_err(|err| Error::Io(Some(wordfile.into()), err))));
+    status(&format!("Word File: {}\n", wordfile.display()));
 
     // In the future, variable-length numbers may be used.
     // It would be wasteful to check all combos for a word that is longer.
@@ -137,14 +140,8 @@ fn check_number(number: &str, wordfile: &Path, quiet: bool) {
     let mut wordcnt = 0usize;
     let mut trycnt = 0usize;
 
-    for tryword in wordfile.lines() {
-        let word = match tryword {
-            Err(e) => {
-                fail_msg(&format!("Error while reading word: {}", e));
-                return;
-            },
-            Ok(w) => w
-        };
+    for tryword in wordreader.lines() {
+        let word = try!(tryword);
         if word.len() > numberlen {
             // A combo will never contain a word that is longer than itself.
             continue;
@@ -176,17 +173,24 @@ fn check_number(number: &str, wordfile: &Path, quiet: bool) {
 
     // Exit status 2 if no matches were found (otherwise successful).
     env::set_exit_status(if matchcnt == 0 {2} else {0});
+    Ok(())
 }
 
 /// Print a failure message and set the exit code to 1.
-fn fail_msg(msg: &String) {
-    println!("{}", msg);
+fn fail_msg(msg: &str) {
+    println!("\n{}\n", msg);
+    env::set_exit_status(1);
+}
+
+/// Print usage string, with an reason for printing it.
+fn print_usage(reason: &str) {
+    println!("\n{}\n\n{}\n{}", reason, VERSION, HELP);
     env::set_exit_status(1);
 }
 
 /// Get a list of all possible letter combinations from a phone number.
 /// Assumes a 7 digit number, and returns an Error on non-numeric characters.
-fn get_combos(number: &str) -> Result<Box<Vec<String>>> {
+fn get_combos(number: &str) -> Result<Vec<String>, Error> {
 
     let numbermap: HashMap<char, Vec<char>> = hashmap!{
         '0' => vec!['0'],
@@ -203,54 +207,50 @@ fn get_combos(number: &str) -> Result<Box<Vec<String>>> {
 
 
     let chars: Vec<char> = number.chars().collect();
-    let mut combos: Vec<String> = Vec::new();
-
-    let invalid_num_err = |c: char| {
-        Error::new(ErrorKind::Other, format!("Not a number: {}", c))
-    };
+    let mut combos = Vec::new();
 
     // Iterate over the product of all possible letters.
     for combo in iproduct!(
         match numbermap.get(&chars[0]) {
             Some(c) => c,
             None => {
-                return Err(invalid_num_err(chars[0]));
+                return Err(Error::NotANumber(chars[0]));
             }
         },
         match numbermap.get(&chars[1]) {
             Some(c) => c,
             None => {
-                return Err(invalid_num_err(chars[1]));
+                return Err(Error::NotANumber(chars[1]));
             }
         },
         match numbermap.get(&chars[2]) {
             Some(c) => c,
             None => {
-                return Err(invalid_num_err(chars[2]));
+                return Err(Error::NotANumber(chars[2]));
             }
         },
         match numbermap.get(&chars[3]) {
             Some(c) => c,
             None => {
-                return Err(invalid_num_err(chars[3]));
+                return Err(Error::NotANumber(chars[3]));
             }
         },
         match numbermap.get(&chars[4]) {
             Some(c) => c,
             None => {
-                return Err(invalid_num_err(chars[4]));
+                return Err(Error::NotANumber(chars[4]));
             }
         },
         match numbermap.get(&chars[5]) {
             Some(c) => c,
             None => {
-                return Err(invalid_num_err(chars[5]));
+                return Err(Error::NotANumber(chars[5]));
             }
         },
         match numbermap.get(&chars[6]) {
             Some(c) => c,
             None => {
-                return Err(invalid_num_err(chars[6]));
+                return Err(Error::NotANumber(chars[6]));
             }
         }
     ) {
@@ -266,52 +266,60 @@ fn get_combos(number: &str) -> Result<Box<Vec<String>>> {
         combos.push(combov.into_iter().collect::<String>());
     }
 
-    Ok(Box::new(combos))
+    Ok(combos)
 }
 
 /// Return this executable's parent directory.
-fn get_exe_parent() -> Result<PathBuf> {
-    let exepath = try!(env::current_exe());
-    let mut exeparent = exepath.clone();
-    exeparent.pop();
-    Ok(exeparent)
+fn get_exe_parent() -> io::Result<PathBuf> {
+    let mut exepath = try!(env::current_exe());
+    exepath.pop();
+    Ok(exepath)
 }
 
 /// Return the word-file path. The file must be named 'words', and it must
 /// be located next to the `phonewords` executable.
 /// A symlink can be used to point to some other file, but the symlink must
 /// follow the same rules (named 'words', located next to the exe).
-fn get_wordfile_path() -> Result<PathBuf> {
+fn get_wordfile_path() -> io::Result<PathBuf> {
     let mut exeparent = try!(get_exe_parent());
     exeparent.push("words");
     // Try to read as a symlink first, but fallback to the normal path.
-    match read_link(&exeparent) {
-        Err(_) => Ok(exeparent),
-        Ok(realpath) => Ok(realpath)
+    read_link(&exeparent).or(Ok(exeparent))
+}
+
+#[derive(Debug)]
+enum Error {
+    Io(Option<PathBuf>, io::Error),
+    NotANumber(char),
+}
+
+impl error::Error for Error {
+    fn description(&self) -> &str {
+        match *self {
+            Error::Io(..) => "IO error",
+            Error::NotANumber(_) => "Not a number",
+        }
     }
 }
 
-/// Print usage string, with an optional reason for printing it.
-/// If a `reason` is set, the exit status is set to 1.
-fn print_usage(reason: Option<&str>) {
-    if let Some(msg) = reason {
-        // A 'reason' means the message is printed because of user error.
-        println!("\n{}\n", msg);
-        env::set_exit_status(1);
+impl fmt::Display for Error {
+    fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
+        match *self {
+            Error::Io(ref file, ref err) => {
+                match *file {
+                    Some(ref file) => write!(fmt, "Io error: {}, file: {}", err, file.display()),
+                    None => write!(fmt, "Io error: {}", err)
+                }
+            },
+            Error::NotANumber(num) => {
+                write!(fmt, "Error while generating letter combos, not a number: {}", num)
+            }
+        }
     }
+}
 
-    println!("{}
-
-    Usage:
-        phonewords -h | -v
-        phonewords <number> [-q]
-
-    Options:
-        number        : Phone number to check (7 digits).
-        -h,--help     : Show this message.
-        -q,--quiet    : Only print results.
-        -v,--version  : Show version and exit.
-
-    Exit status is 1 on error, 2 if no matches were found, and 0 on success.
-    ", VERSIONSTR);
+impl From<io::Error> for Error {
+    fn from(err: io::Error) -> Error {
+        Error::Io(None, err)
+    }
 }

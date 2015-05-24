@@ -73,7 +73,7 @@ fn main() {
 
 /// Check a number for matches, print optional status and matches as they
 /// are found.
-fn check_number(number: &String, wordfile: &Path, quiet: bool) {
+fn check_number(number: &str, wordfile: &Path, quiet: bool) {
 
     // Optional status printer.
     let status = |msg: &String| {
@@ -84,7 +84,7 @@ fn check_number(number: &String, wordfile: &Path, quiet: bool) {
 
     // Ensure that the number is exactly 7 digits,
     // ..truncate or pad with 0's if needed.
-    let mut usenumber: String = number.clone();
+    let mut usenumber: String = number.to_string();
     while usenumber.len() < 7 {
         usenumber.insert(0, '0');
     }

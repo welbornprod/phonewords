@@ -5,6 +5,22 @@
 /// for combos that contain words.
 /// -Christopher Welborn 5-19-15
 
+/// Copyright (C) 2015 Christopher Welborn
+///
+/// This program is free software; you can redistribute it and/or modify
+/// it under the terms of the GNU General Public License as published by
+/// the Free Software Foundation; either version 2 of the License, or
+/// (at your option) any later version.
+///
+/// This program is distributed in the hope that it will be useful,
+/// but WITHOUT ANY WARRANTY; without even the implied warranty of
+/// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+/// GNU General Public License for more details.
+///
+/// You should have received a copy of the GNU General Public License along
+/// with this program; if not, write to the Free Software Foundation, Inc.,
+/// 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301 USA.
+
 #[macro_use(iproduct)]
 extern crate itertools;
 
@@ -14,7 +30,7 @@ use std::fs::{read_link, File};
 use std::io::{BufRead, BufReader, Error, ErrorKind, Result};
 use std::path::{Path, PathBuf};
 
-static VERSIONSTR: &'static str = "PhoneWords v. 0.0.7-2";
+static VERSIONSTR: &'static str = "PhoneWords v. 0.0.7-3";
 
 
 fn main() {
@@ -84,16 +100,14 @@ fn check_number(number: &str, wordfile: &Path, quiet: bool) {
 
     // Ensure that the number is exactly 7 digits,
     // ..truncate or pad with 0's if needed.
-    let mut usenumber: String = number.to_string();
-    while usenumber.len() < 7 {
-        usenumber.insert(0, '0');
-    }
+    let mut usenumber: String = format!("{:0>7}", number);
     while usenumber.len() > 7 {
         usenumber.pop();
     }
 
     status(&format!("\n Checking: {}", usenumber));
 
+    // Generate all possible letter combinations for this number.
     let combos = match get_combos(&usenumber) {
         Ok(c) => c,
         Err(e) => {
@@ -104,6 +118,7 @@ fn check_number(number: &str, wordfile: &Path, quiet: bool) {
     };
     status(&format!("   Combos: {}", combos.len()));
 
+    // Load word file for iteration, save filename for display purposes.
     let filename = wordfile.to_str().unwrap();
     let wordfile = BufReader::new(match File::open(wordfile) {
         Err(e) => {
@@ -150,16 +165,14 @@ fn check_number(number: &str, wordfile: &Path, quiet: bool) {
     let pluralmatches = if matchcnt == 1 {"match"} else {"matches"};
     let pluralwords = if wordcnt == 1  {"word"} else {"words"};
 
-    status(
-        &format!(
-            "\nFound {mcnt} {mplur} against {wcnt} {wplur} in {tcnt} tries.",
-            mcnt=matchcnt,
-            mplur=pluralmatches,
-            wcnt=wordcnt,
-            wplur=pluralwords,
-            tcnt=trycnt
-        )
-    );
+    status(&format!(
+        "\nFound {mcnt} {mplural} against {wcnt} {wplural} in {tcnt} tries.",
+        mcnt=matchcnt,
+        mplural=pluralmatches,
+        wcnt=wordcnt,
+        wplural=pluralwords,
+        tcnt=trycnt
+    ));
 
     // Exit status 2 if no matches were found (otherwise successful).
     env::set_exit_status(if matchcnt == 0 {2} else {0});

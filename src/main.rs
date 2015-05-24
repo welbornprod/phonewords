@@ -1,11 +1,11 @@
 #![feature(exit_status)]
-#[macro_use]
 
 /// Finds possible words that can be made from a phone number.
 /// Generates all possible letter combos, and searches the `words` file
 /// for combos that contain words.
 /// -Christopher Welborn 5-19-15
 
+#[macro_use(iproduct)]
 extern crate itertools;
 
 use std::collections::{HashMap};
@@ -16,19 +16,6 @@ use std::path::{Path, PathBuf};
 
 static VERSIONSTR: &'static str = "PhoneWords v. 0.0.7-2";
 
-
-/// Creates and initializes a new hashmap.
-macro_rules! hashmap(
-    { $($key:expr => $value:expr),+ } => {
-        {
-            let mut m = ::std::collections::HashMap::new();
-            $(
-                m.insert($key, $value);
-            )+
-            m
-        }
-     };
-);
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -70,6 +57,19 @@ fn main() {
 
     check_number(&args[1], &wordpath, quiet);
 }
+
+/// Creates and initializes a new hashmap.
+macro_rules! hashmap(
+    { $($key:expr => $value:expr),+ } => {
+        {
+            let mut m = ::std::collections::HashMap::new();
+            $(
+                m.insert($key, $value);
+            )+
+            m
+        }
+     };
+);
 
 /// Check a number for matches, print optional status and matches as they
 /// are found.

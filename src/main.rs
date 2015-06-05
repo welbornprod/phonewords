@@ -1,4 +1,5 @@
-#![feature(exit_status)]
+#![feature(exit_status,plugin)]
+#![plugin(clippy)]
 
 /// Finds possible words that can be made from a phone number.
 /// Generates all possible letter combos, and searches the `words` file
@@ -130,7 +131,7 @@ fn check_number(number: &str, wordfile: &Path, quiet: bool) -> Result<(), Error>
     let combos = try!(get_combos(&usenumber));
     status(&format!("   Combos: {}", combos.len()));
 
-    // Load word file for iteration, save filename for display purposes.
+    // Load word file for iteration
     let wordreader = BufReader::new(
         try!(File::open(wordfile).map_err(
             |err| Error::Io(Some(wordfile.into()), err)

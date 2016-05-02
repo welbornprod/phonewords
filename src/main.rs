@@ -1,11 +1,10 @@
-#![feature(exit_status,plugin)]
-#![plugin(clippy)]
+#![cfg_attr(feature="clippy", feature(plugin))]
+#![cfg_attr(feature="clippy", plugin(clippy))]
 
 /// Finds possible words that can be made from a phone number.
 /// Generates all possible letter combos, and searches the `words` file
 /// for combos that contain words.
 /// -Christopher Welborn 5-19-15
-
 /// Copyright (C) 2015 Christopher Welborn
 ///
 /// This program is free software; you can redistribute it and/or modify
@@ -90,7 +89,9 @@ fn main() {
             fail_msg(&err.to_string());
             return;
         },
-        Ok(()) => {},
+        Ok(exitcode) => {
+            std::process::exit(exitcode);
+        },
     }
 }
 
@@ -109,7 +110,7 @@ macro_rules! hashmap(
 
 /// Check a number for matches,
 //  print optional status and matches as they are found.
-fn check_number(number: &str, wordfile: &Path, quiet: bool) -> Result<(), Error> {
+fn check_number(number: &str, wordfile: &Path, quiet: bool) -> Result<i32, Error> {
 
     // Optional status printer.
     let status = |msg: &String| {
@@ -177,22 +178,23 @@ fn check_number(number: &str, wordfile: &Path, quiet: bool) -> Result<(), Error>
         wplural=pluralwords,
         tcnt=trycnt
     ));
-
-    // Exit status 2 if no matches were found (otherwise successful).
-    env::set_exit_status(if matchcnt == 0 {2} else {0});
-    Ok(())
+    let exitcode = match matchcnt {
+        0 => 2,
+        _ => 0
+    };
+    Ok(exitcode)
 }
 
 /// Print a failure message and set the exit code to 1.
 fn fail_msg(msg: &str) {
     println!("\n{}\n", msg);
-    env::set_exit_status(1);
+    std::process::exit(1);
 }
 
 /// Print usage string, with an reason for printing it.
 fn print_usage(reason: &str) {
     println!("\n{}\n\n{}\n{}", reason, VERSION, HELP);
-    env::set_exit_status(1);
+    std::process::exit(1);
 }
 
 /// Get a list of all possible letter combinations from a phone number.

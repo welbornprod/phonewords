@@ -1,13 +1,11 @@
 [package]
 name = "phonewords"
-version = "0.0.8-3"
+version = "0.0.8-4"
 authors = [
     "Christopher Welborn <cj@welbornprod.com>",
     "Thomas Bahn <thomas@thomas-bahn.net>"
 ]
 
 [dependencies]
+clippy = {version = "*", optional = true}
 itertools = "*"
-
-[dependencies.clippy]
-git = "https://github.com/Manishearth/rust-clippy"

@@ -21,7 +21,16 @@ Options:
 Exit status is 1 on error, 2 if no matches were found, and 0 on success.
 ```
 
+Dependencies:
+-------------
+
+- [clippy](https://github.com/Manishearth/rust-clippy) - Lints code at compile time.
+    - Compiler plugins are unstable at the moment,
+      so this means you must build using a *nightly* rust version.
+
 Note:
 -----
 
-I wrote this to learn more about rust. Any helpful advice about the code would be welcome.
+I wrote this to learn more about rust.
+Any helpful advice about the code would be welcome.
+

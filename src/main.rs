@@ -1,10 +1,10 @@
-#![feature(exit_status)]
+#![cfg_attr(feature="clippy", feature(plugin))]
+#![cfg_attr(feature="clippy", plugin(clippy))]
 
 /// Finds possible words that can be made from a phone number.
 /// Generates all possible letter combos, and searches the `words` file
 /// for combos that contain words.
 /// -Christopher Welborn 5-19-15
-
 /// Copyright (C) 2015 Christopher Welborn
 ///
 /// This program is free software; you can redistribute it and/or modify
@@ -30,7 +30,9 @@ use std::fs::{read_link, File};
 use std::io::{self, BufRead, BufReader};
 use std::path::{Path, PathBuf};
 
-const VERSION: &'static str = concat!("PhoneWords v. ", env!("CARGO_PKG_VERSION"));
+const VERSION: &'static str = concat!(
+    "PhoneWords v. ", env!("CARGO_PKG_VERSION")
+);
 const HELP: &'static str = "
     Usage:
         phonewords -h | -v
@@ -87,7 +89,9 @@ fn main() {
             fail_msg(&err.to_string());
             return;
         },
-        Ok(()) => {},
+        Ok(exitcode) => {
+            std::process::exit(exitcode);
+        },
     }
 }
 
@@ -104,9 +108,9 @@ macro_rules! hashmap(
      };
 );
 
-/// Check a number for matches, print optional status and matches as they
-/// are found.
-fn check_number(number: &str, wordfile: &Path, quiet: bool) -> Result<(), Error> {
+/// Check a number for matches,
+//  print optional status and matches as they are found.
+fn check_number(number: &str, wordfile: &Path, quiet: bool) -> Result<i32, Error> {
 
     // Optional status printer.
     let status = |msg: &String| {
@@ -118,7 +122,8 @@ fn check_number(number: &str, wordfile: &Path, quiet: bool) -> Result<(), Error>
     // Ensure that the number is exactly 7 digits,
     // ..truncate or pad with 0's if needed.
     let mut usenumber = format!("{:0>7}", number);
-    // format! returns character in the ascii range so every byte is a valid char boundary.
+    // format! returns character in the ascii range so every byte
+    // is a valid char boundary.
     usenumber.truncate(7);
 
     status(&format!("\n Checking: {}", usenumber));
@@ -127,9 +132,12 @@ fn check_number(number: &str, wordfile: &Path, quiet: bool) -> Result<(), Error>
     let combos = try!(get_combos(&usenumber));
     status(&format!("   Combos: {}", combos.len()));
 
-    // Load word file for iteration, save filename for display purposes.
+    // Load word file for iteration
     let wordreader = BufReader::new(
-        try!(File::open(wordfile).map_err(|err| Error::Io(Some(wordfile.into()), err))));
+        try!(File::open(wordfile).map_err(
+            |err| Error::Io(Some(wordfile.into()), err)
+        ))
+    );
     status(&format!("Word File: {}\n", wordfile.display()));
 
     // In the future, variable-length numbers may be used.
@@ -170,22 +178,23 @@ fn check_number(number: &str, wordfile: &Path, quiet: bool) -> Result<(), Error>
         wplural=pluralwords,
         tcnt=trycnt
     ));
-
-    // Exit status 2 if no matches were found (otherwise successful).
-    env::set_exit_status(if matchcnt == 0 {2} else {0});
-    Ok(())
+    let exitcode = match matchcnt {
+        0 => 2,
+        _ => 0
+    };
+    Ok(exitcode)
 }
 
 /// Print a failure message and set the exit code to 1.
 fn fail_msg(msg: &str) {
     println!("\n{}\n", msg);
-    env::set_exit_status(1);
+    std::process::exit(1);
 }
 
 /// Print usage string, with an reason for printing it.
 fn print_usage(reason: &str) {
     println!("\n{}\n\n{}\n{}", reason, VERSION, HELP);
-    env::set_exit_status(1);
+    std::process::exit(1);
 }
 
 /// Get a list of all possible letter combinations from a phone number.
@@ -307,12 +316,17 @@ impl fmt::Display for Error {
         match *self {
             Error::Io(ref file, ref err) => {
                 match *file {
-                    Some(ref file) => write!(fmt, "Io error: {}, file: {}", err, file.display()),
+                    Some(ref file) => {
+                        write!(fmt,
+                            "Io error: {}, file: {}", err, file.display())
+                    },
                     None => write!(fmt, "Io error: {}", err)
                 }
             },
             Error::NotANumber(num) => {
-                write!(fmt, "Error while generating letter combos, not a number: {}", num)
+                write!(fmt,
+                    "Error while generating letter combos, not a number: {}",
+                    num)
             }
         }
     }

@@ -4,12 +4,21 @@ CC=cargo
 .PHONY: all, clean, debug, help, run, targets
 
 all:
+	-@if [[ ! -e ./target/release/words ]]; then\
+		ln -s "$(CURDIR)/words" "$(CURDIR)/target/release/words";\
+	fi;
 	$(CC) build --release;
 
 debug:
+	-@if [[ ! -e ./target/debug/words ]]; then\
+		ln -s "$(CURDIR)/words" "$(CURDIR)/target/debug/words";\
+	fi;
 	$(CC) build;
 
 run:
+	-@if [[ ! -e ./target/release/words ]]; then\
+		ln -s "$(CURDIR)/words" "$(CURDIR)/target/release/words";\
+	fi;
 	$(CC) run --release -- --help;
 	-@echo -e "\n\n...just use \`cargo run\`.";
 

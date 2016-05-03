@@ -34,7 +34,7 @@ Dependencies:
     - Compiler plugins are unstable at the moment,
       so this means you must build using a *nightly* rust version.
 
-Running `cargo build --release` is enough to grab all of the dependencies.
+Running `make` is enough to grab all of the dependencies.
 
 Build Instructions:
 -------------------

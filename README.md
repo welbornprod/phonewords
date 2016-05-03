@@ -56,15 +56,8 @@ Running the executable:
 -----------------------
 
 Once the project is built, there are two ways to run this.
-One is using `cargo`, which will build the project if it is not already built.
-```
-cargo run --release -- [PHONEWORDS_ARGS...]
-```
 
-Using `--release` is important, because `cargo` builds a debug version by
-default and it's much slower.
-
-You can also just run the executables that `cargo` builds, located in
+You can just run the executable that `cargo` builds, located in
 `./target/release` for release builds.
 ```
 ./target/release/phonewords --help
@@ -74,6 +67,15 @@ The debug build will be located in `./target/debug`.
 ```
 ./target/debug/phonewords --help
 ```
+
+You can also use `cargo`, which will build the project if it is not already
+built.
+```
+cargo run --release -- [PHONEWORDS_ARGS...]
+```
+
+Using `--release` is important, because `cargo` builds a debug version by
+default and it's much slower.
 
 #### Words File:
 

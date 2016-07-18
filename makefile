@@ -31,7 +31,7 @@ help:
 targets:
 	-@echo -e "Make targets available:\n\
 	all     : Build a release executable.\n\
-	clean   : Remote the ./target directory.\n\
+	clean   : Remove the ./target directory.\n\
 	debug   : Build a debug executable.\n\
 	run     : Run the release executable, build if needed.\n\
 	targets : Show this message.";
